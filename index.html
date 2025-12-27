@@ -1,0 +1,354 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Brain Logic Game (50 MCQ)</title>
+<style>
+  :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body{margin:0;background:#0b1220;color:#e8eefc}
+  .wrap{max-width:920px;margin:0 auto;padding:22px}
+  .card{background:#121b2e;border:1px solid #233154;border-radius:16px;padding:18px;box-shadow:0 10px 26px rgba(0,0,0,.28)}
+  h1{margin:0 0 10px;font-size:22px}
+  .sub{opacity:.85;margin:0 0 14px;font-size:13px}
+  .pill{display:inline-block;background:#0f1730;border:1px solid #2c3d6b;border-radius:999px;padding:6px 10px;font-size:13px;margin:0 8px 8px 0}
+  .qbox{padding:14px;border-radius:14px;background:#0f1730;border:1px solid #2c3d6b}
+  .qno{font-size:13px;opacity:.85;margin-bottom:6px}
+  .qtext{font-size:18px;line-height:1.45;white-space:pre-wrap}
+  .options{display:grid;gap:10px;margin-top:12px}
+  button.opt{cursor:pointer;text-align:left;background:#172445;color:#e8eefc;border:1px solid #2c3d6b;padding:12px;border-radius:12px;font-weight:650}
+  button.opt:hover{filter:brightness(1.08)}
+  button.opt:disabled{opacity:.7;cursor:not-allowed}
+  .feedback{margin-top:12px;font-weight:800;font-size:14px;padding:10px 12px;border-radius:12px;border:1px solid transparent;display:none}
+  .ok{display:block;background:rgba(0,200,120,.12);border-color:rgba(0,200,120,.35)}
+  .bad{display:block;background:rgba(255,80,80,.12);border-color:rgba(255,80,80,.35)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .btn{cursor:pointer;background:#172445;color:#e8eefc;border:1px solid #2c3d6b;padding:10px 14px;border-radius:12px;font-weight:700}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  input{width:100%;box-sizing:border-box;border-radius:12px;padding:10px 12px;border:1px solid #2c3d6b;background:#0f1730;color:#e8eefc;outline:none}
+  .grid{display:grid;gap:12px}
+  .hidden{display:none}
+  .note{font-size:12px;opacity:.85;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Student form -->
+  <div class="card" id="formCard">
+    <h1>🧒 Student Details</h1>
+    <p class="sub">Fill details to start. Results will be saved automatically.</p>
+
+    <div class="grid">
+      <div>
+        <div class="note">Student Name</div>
+        <input id="studentName" placeholder="Enter student name" />
+      </div>
+      <div>
+        <div class="note">Father Name</div>
+        <input id="fatherName" placeholder="Enter father name" />
+      </div>
+      <div>
+        <div class="note">Phone Number</div>
+        <input id="phone" placeholder="Enter phone number" />
+      </div>
+    </div>
+
+    <div class="controls" style="margin-top:14px">
+      <button class="btn" id="startBtn">Start Game 🎮</button>
+    </div>
+
+    <div class="note" id="formMsg"></div>
+  </div>
+
+  <!-- Game -->
+  <div class="card hidden" id="gameCard">
+    <h1>🎮 Brain Logic Game (50 Questions)</h1>
+
+    <div class="pill" id="studentInfo"></div><br/>
+
+    <div class="pill" id="progressPill">Question 1 / 50</div>
+    <div class="pill" id="scorePill">Score: 0/0</div>
+    <div class="pill" id="syncPill">Sync: Not sent</div>
+
+    <div class="qbox">
+      <div class="qno" id="qNo"></div>
+      <div class="qtext" id="qText"></div>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback"></div>
+
+      <div class="controls">
+        <button class="btn" id="prevBtn">⬅ Previous</button>
+        <button class="btn" id="nextBtn">Next ➡</button>
+        <button class="btn" id="finishBtn">Finish & Submit ✅</button>
+        <button class="btn" id="restartBtn">↻ Restart</button>
+      </div>
+
+      <div class="note">
+        Score shows <b>Correct/Attempted</b> (example: 2/5). Submit will send result to your admin sheet.
+      </div>
+    </div>
+  </div>
+
+  <!-- End -->
+  <div class="card hidden" id="endCard">
+    <h1>✅ Submitted</h1>
+    <p class="sub" id="endText"></p>
+    <div class="controls">
+      <button class="btn" id="playAgainBtn">Play Again</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ====== Paste your Apps Script Web App URL here ======
+  const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbzqbZlufKWIs2hPCdAj6zg_xYCkAdHe2RjU1nu3EOb7iVDI1t9guouQfPjPgJBv9668Iw/exec";
+
+  // ====== 50 safe MCQs (non-violent) ======
+  const QUESTIONS = [
+    { q:"You overtake the person who is second.\nWhat position are you in?", o:["First","Second","Third","Fourth"], a:1 },
+    { q:"If TODAY is Monday, what day after 10 days?", o:["Wednesday","Thursday","Friday","Saturday"], a:1 },
+    { q:"Which number comes next?\n2, 4, 8, 16, ___", o:["18","20","24","32"], a:3 },
+    { q:"1 kg cotton and 1 kg iron — which is heavier?", o:["Cotton","Iron","Both same","Cannot say"], a:2 },
+    { q:"If 5 books cost ₹100, how much do 3 books cost?", o:["₹40","₹50","₹60","₹80"], a:2 },
+    { q:"Which number is missing?\n1, 4, 9, __, 25", o:["12","14","16","18"], a:2 },
+    { q:"25 + 25 ÷ 5 = ?", o:["10","20","30","50"], a:2 },
+    { q:"Monday, Wednesday, Friday, ___", o:["Saturday","Sunday","Tuesday","Monday"], a:2 },
+    { q:"You have one match. What do you light first?", o:["Candle","Lamp","Stove","Match"], a:3 },
+    { q:"How many months have 28 days?", o:["1","2","11","12"], a:3 },
+
+    { q:"Which is the odd one out?", o:["Square","Triangle","Circle","Cube"], a:3 },
+    { q:"12 ÷ (2 × 3) = ?", o:["1","2","3","6"], a:1 },
+    { q:"Next number:\n3, 6, 9, 12, ___", o:["13","14","15","16"], a:2 },
+    { q:"10% discount on ₹500. Final price?", o:["₹450","₹460","₹490","₹400"], a:0 },
+    { q:"Rearrange 'L I S T E N' forms:", o:["Silent","Tinsel","Enlist","All of these"], a:3 },
+    { q:"Which number is the smallest?", o:["0.5","0.05","0.500","0.55"], a:1 },
+    { q:"A triangle has 3 sides. 2 triangles have:", o:["3","5","6","8"], a:2 },
+    { q:"What is 15% of 200?", o:["15","20","25","30"], a:3 },
+    { q:"100 pages in 5 days = pages/day?", o:["10","15","20","25"], a:2 },
+    { q:"Which is a prime number?", o:["21","29","33","39"], a:1 },
+
+    { q:"Pattern: 7+3=73, 6+4=64. Then 9+2=?", o:["92","11","72","18"], a:0 },
+    { q:"A, C, E, G, ___", o:["H","I","J","K"], a:1 },
+    { q:"Double 12 and subtract 10 =", o:["14","24","34","44"], a:0 },
+    { q:"Which fraction is bigger?", o:["1/3","1/4","1/5","1/6"], a:0 },
+    { q:"Rectangle length 8 width 3, perimeter:", o:["11","22","24","48"], a:1 },
+    { q:"Missing number: 10, 20, __, 40, 50", o:["15","25","30","35"], a:2 },
+    { q:"If 2x = 18, x = ?", o:["7","8","9","10"], a:2 },
+    { q:"Minutes in 2 hours 30 minutes:", o:["120","150","180","210"], a:1 },
+    { q:"NOT a multiple of 3:", o:["21","27","29","33"], a:2 },
+    { q:"1 to 100: how many divisible by 10?", o:["5","10","20","50"], a:1 },
+
+    { q:"If a=5 and b=2, a²-b²=?", o:["21","23","25","27"], a:0 },
+    { q:"Pattern: ▲ ● ▲ ● ▲ ___", o:["▲","●","■","◆"], a:1 },
+    { q:"Class has 30 students. 12 are girls. Boys?", o:["12","18","20","22"], a:1 },
+    { q:"Pencil ₹3. Cost of 8 pencils?", o:["₹11","₹21","₹24","₹30"], a:2 },
+    { q:"Which number is even?", o:["17","21","32","45"], a:2 },
+    { q:"Rotate letter 'N' by 180° becomes:", o:["N","Z","S","H"], a:0 },
+    { q:"15 + 9 =", o:["22","23","24","25"], a:2 },
+    { q:"4 red, 3 blue, 2 green balls total:", o:["7","8","9","10"], a:2 },
+    { q:"Correct spelling:", o:["Recieve","Recive","Receive","Receeve"], a:2 },
+    { q:"Days in 3 weeks:", o:["14","18","21","24"], a:2 },
+
+    { q:"40 - 9 =", o:["29","30","31","32"], a:2 },
+    { q:"Next: 5, 10, 20, 40, ___", o:["45","60","70","80"], a:3 },
+    { q:"6 chocolates shared among 3 friends each gets:", o:["1","2","3","4"], a:1 },
+    { q:"Which is a factor of 24?", o:["5","6","7","9"], a:1 },
+    { q:"At 2:00 minute hand points at:", o:["2","6","12","3"], a:2 },
+    { q:"1000 - 1 - 1 - 1 = ?", o:["996","997","998","999"], a:1 },
+    { q:"Hexagon has sides:", o:["5","6","7","8"], a:1 },
+    { q:"3 × 4 + 2 =", o:["12","14","18","20"], a:1 },
+    { q:"Greatest number:", o:["0.9","0.99","0.909","0.9099"], a:1 },
+    { q:"Take away 3 from 3, remains:", o:["0","1","3","Nothing"], a:0 },
+  ];
+
+  // ====== State ======
+  const userAnswers = {}; // { qIndex: chosenOptionIndex }
+  let order = QUESTIONS.map((_, i) => i);
+  let idx = 0;
+  let correct = 0;
+  let attempted = 0;
+
+  // ====== Elements ======
+  const formCard = document.getElementById("formCard");
+  const gameCard = document.getElementById("gameCard");
+  const endCard = document.getElementById("endCard");
+  const formMsg = document.getElementById("formMsg");
+  const startBtn = document.getElementById("startBtn");
+  const studentInfo = document.getElementById("studentInfo");
+  const progressPill = document.getElementById("progressPill");
+  const scorePill = document.getElementById("scorePill");
+  const syncPill = document.getElementById("syncPill");
+  const qNo = document.getElementById("qNo");
+  const qText = document.getElementById("qText");
+  const optionsDiv = document.getElementById("options");
+  const feedback = document.getElementById("feedback");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const finishBtn = document.getElementById("finishBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const playAgainBtn = document.getElementById("playAgainBtn");
+  const endText = document.getElementById("endText");
+
+  const studentNameEl = document.getElementById("studentName");
+  const fatherNameEl = document.getElementById("fatherName");
+  const phoneEl = document.getElementById("phone");
+
+  function render() {
+    const qIndex = order[idx];
+    const item = QUESTIONS[qIndex];
+
+    progressPill.textContent = `Question ${idx + 1} / ${QUESTIONS.length}`;
+    scorePill.textContent = `Score: ${correct}/${attempted}`;
+    qNo.textContent = `Q${idx + 1}`;
+    qText.textContent = item.q;
+
+    optionsDiv.innerHTML = "";
+    feedback.className = "feedback";
+    feedback.style.display = "none";
+
+    const alreadyChosen = userAnswers[qIndex];
+    item.o.forEach((opt, optIdx) => {
+      const b = document.createElement("button");
+      b.className = "opt";
+      b.type = "button";
+      b.textContent = `${String.fromCharCode(65+optIdx)}) ${opt}`;
+      b.disabled = (alreadyChosen !== undefined);
+      b.addEventListener("click", () => choose(qIndex, optIdx));
+      optionsDiv.appendChild(b);
+    });
+
+    if (alreadyChosen !== undefined) {
+      showFeedback(alreadyChosen === item.a, item, alreadyChosen);
+    }
+
+    prevBtn.disabled = idx === 0;
+    nextBtn.disabled = idx === QUESTIONS.length - 1;
+  }
+
+  function showFeedback(isCorrect, item, chosenIdx) {
+    feedback.style.display = "block";
+    if (isCorrect) {
+      feedback.classList.add("ok");
+      feedback.textContent = "✅ Right!";
+    } else {
+      feedback.classList.add("bad");
+      const letters = ["A","B","C","D"];
+      feedback.textContent = `❌ Wrong. Correct: ${letters[item.a]}`;
+    }
+  }
+
+  function choose(qIndex, chosenIdx) {
+    if (userAnswers[qIndex] !== undefined) return;
+
+    const item = QUESTIONS[qIndex];
+    userAnswers[qIndex] = chosenIdx;
+
+    attempted += 1;
+    const isCorrect = chosenIdx === item.a;
+    if (isCorrect) correct += 1;
+
+    // disable all options
+    [...optionsDiv.querySelectorAll("button.opt")].forEach(b => b.disabled = true);
+
+    showFeedback(isCorrect, item, chosenIdx);
+    scorePill.textContent = `Score: ${correct}/${attempted}`;
+  }
+
+  function next() { if (idx < QUESTIONS.length - 1) { idx++; render(); } }
+  function prev() { if (idx > 0) { idx--; render(); } }
+
+  function restart() {
+    idx = 0; correct = 0; attempted = 0;
+    for (const k in userAnswers) delete userAnswers[k];
+    syncPill.textContent = "Sync: Not sent";
+    render();
+  }
+
+  function validatePhone(p) {
+    // simple validation: 10 digits (India)
+    const digits = (p || "").replace(/\D/g,"");
+    return digits.length >= 10;
+  }
+
+  startBtn.addEventListener("click", () => {
+    formMsg.textContent = "";
+    if (!studentNameEl.value.trim() || !fatherNameEl.value.trim() || !phoneEl.value.trim()) {
+      formMsg.textContent = "❌ Please fill all details.";
+      return;
+    }
+    if (!validatePhone(phoneEl.value.trim())) {
+      formMsg.textContent = "❌ Please enter a valid phone number.";
+      return;
+    }
+    if (!ENDPOINT_URL || ENDPOINT_URL.includes("PASTE_YOUR_WEB_APP_URL_HERE")) {
+      formMsg.textContent = "❌ Admin setup pending: Web App URL not added yet.";
+      return;
+    }
+
+    formCard.classList.add("hidden");
+    gameCard.classList.remove("hidden");
+
+    studentInfo.textContent = `Student: ${studentNameEl.value.trim()} | Father: ${fatherNameEl.value.trim()} | Phone: ${phoneEl.value.trim()}`;
+    render();
+  });
+
+  nextBtn.addEventListener("click", next);
+  prevBtn.addEventListener("click", prev);
+  restartBtn.addEventListener("click", restart);
+
+  finishBtn.addEventListener("click", async () => {
+    syncPill.textContent = "Sync: Sending...";
+    syncPill.style.opacity = "1";
+
+    const logs = order.map((qIndex, i) => {
+      const chosen = userAnswers[qIndex];
+      if (chosen === undefined) return null;
+      return {
+        qNo: i + 1,
+        selected: ["A","B","C","D"][chosen],
+        isCorrect: chosen === QUESTIONS[qIndex].a
+      };
+    }).filter(Boolean);
+
+    const payload = {
+      studentName: studentNameEl.value.trim(),
+      fatherName: fatherNameEl.value.trim(),
+      phone: phoneEl.value.trim(),
+      attempted: attempted,
+      correct: correct,
+      scorePercent: attempted ? Math.round((correct/attempted)*100) : 0,
+      logs: logs
+    };
+
+    try {
+      const res = await fetch(ENDPOINT_URL, {
+        method: "POST",
+        mode: "no-cors", // Apps Script web app often needs this for simple public posting
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      // With no-cors, we can't read response body reliably, so we show success after request completes.
+      syncPill.textContent = "Sync: Sent ✅";
+      endText.textContent = `Thanks ${payload.studentName}! Your score is ${correct}/${attempted} (${payload.scorePercent}%).`;
+      gameCard.classList.add("hidden");
+      endCard.classList.remove("hidden");
+
+    } catch (e) {
+      syncPill.textContent = "Sync: Failed ❌";
+      alert("Failed to submit. Please check internet and try again.");
+    }
+  });
+
+  playAgainBtn.addEventListener("click", () => {
+    // Keep student details (optional). Restart only questions.
+    endCard.classList.add("hidden");
+    gameCard.classList.remove("hidden");
+    restart();
+  });
+</script>
+</body>
+</html>
